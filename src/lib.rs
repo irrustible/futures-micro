@@ -102,7 +102,7 @@ where A: Future<Output=T> + Unpin,
 
 pub async fn or_unchecked<A, B, T>(a: A, b: B) -> T
 where A: Future<Output=T>, B: Future<Output=T> {
-    poll_state((a, b, false, false), |(a, b, ad, bd), ctx| {
+    poll_state((a, b), |(a, b), ctx| {
         let af = unsafe { Pin::new_unchecked(a) };
         let bf = unsafe { Pin::new_unchecked(b) };
         match <A as Future>::poll(af, ctx) {
