@@ -8,6 +8,9 @@ pub use poll_fn::{PollFn, poll_fn};
 mod poll_state;
 pub use poll_state::{PollState, poll_state};
 
+// licensed differently
+mod stolen_from_lite;
+
 // Non-async api
 
 /// Extends Future with some methods
@@ -18,15 +21,8 @@ trait FuturesMicroExt : Future {
 
 impl<F: Future + Unpin> FuturesMicroExt for F {
     fn poll_ref(&mut self, ctx: &mut Context) -> Poll<<Self as Future>::Output> {
-        <F as Future>::poll(Pin::new(self), ctx)
+        <F as Future>::poll(unsafe { Pin::new_unchecked(self) }, ctx)
     }
-}
-
-#[allow(unused_unsafe)] // lol thanks rust, sorry for guarding against the future
-pub unsafe fn poll_ref_unchecked<F, T>(fut: &mut F, ctx: &mut Context) -> Poll<T>
-where F: Future<Output = T> {
-    let pin = unsafe { Pin::new_unchecked(fut) };
-    <F as Future>::poll(pin, ctx)
 }
 
 // Async API
@@ -83,17 +79,14 @@ pub async fn yield_once() {
     }).await
 }
 
-/// I don't think this is useful in its current state, see the
-/// commented out tests
-pub async fn or<A, B, T>(a: A, b: B) -> T
-where A: Future<Output=T> + Unpin,
-      B: Future<Output=T> + Unpin {
-    poll_state(Some((a, b)), |state, ctx|{
-        let (a, b) = state.as_mut().unwrap();
-        match <A as Future>::poll(Pin::new(a), ctx) {
+/// Polls two futures with a left bias until one of them succeeds.
+pub async fn or<T>(a: impl Future<Output=T>, b: impl Future<Output=T>) -> T {
+    pin!(a, b);
+    poll_fn(move |ctx|{
+        match a.as_mut().poll(ctx) {
             Poll::Ready(val) => Poll::Ready(val),
             Poll::Pending => {
-                match <B as Future>::poll(Pin::new(b), ctx) {
+                match b.as_mut().poll(ctx) {
                     Poll::Ready(val) => Poll::Ready(val),
                     Poll::Pending => Poll::Pending,
                 }
@@ -102,21 +95,25 @@ where A: Future<Output=T> + Unpin,
     }).await
 }
 
-/// I don't think this is useful in its current state, see the
-/// commented out tests
-pub async fn or_unchecked<A, B, T>(a: A, b: B) -> T
-where A: Future<Output=T>, B: Future<Output=T> {
-    poll_state((a, b), |(a, b), ctx| {
-        let af = unsafe { Pin::new_unchecked(a) };
-        let bf = unsafe { Pin::new_unchecked(b) };
-        match <A as Future>::poll(af, ctx) {
-            Poll::Ready(val) => Poll::Ready(val),
-            Poll::Pending => {
-                match <B as Future>::poll(bf, ctx) {
-                    Poll::Ready(val) => Poll::Ready(val),
-                    Poll::Pending => Poll::Pending,
-                }
+/// Polls two futures until they are both completed.
+pub async fn zip<A, B>(a: impl Future<Output=A>, b: impl Future<Output=B>) -> (A, B) {
+    pin!(a, b);
+    poll_state((None, None), move |(c, d), ctx|{
+        if c.is_none() {
+            if let Poll::Ready(val) = a.as_mut().poll(ctx) {
+                *c = Some(val);
             }
+        }
+        if d.is_none() {
+            if let Poll::Ready(val) = b.as_mut().poll(ctx) {
+                *d = Some(val);
+            }
+        }
+        if c.is_some() && d.is_some() {
+            Poll::Ready((c.take().unwrap(), d.take().unwrap()))
+        } else {
+            Poll::Pending
         }
     }).await
 }
+

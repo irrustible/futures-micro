@@ -1,4 +1,5 @@
-#[feature(test)]
+#![feature(test)]
+
 use futures_lite::future::{block_on, FutureExt};
 use futures_micro::*;
 
@@ -12,10 +13,6 @@ fn poll_state_test() {
 
 #[test]
 fn poll_ref_test() {
-}
-
-#[test]
-fn poll_ref_unchecked_test() {
 }
 
 #[test]
@@ -38,6 +35,7 @@ fn sleep_test() {
 
 #[test]
 fn next_poll_test() {
+    
 }
 
 #[test]
@@ -46,27 +44,29 @@ fn yield_once_test() {
 
 #[test]
 fn or_test() {
-    // assert_eq!(
-    //     false,
-    //     block_on(
-    //         or(
-    //             Box::new(async { pending().await; true }),
-    //             Box::new(ready(false))
-    //         )
-    //     )
-    // );
+    assert_eq!(
+        false,
+        block_on(or(async { pending().await; true }, ready(false)))
+    );
+}
+#[test]
+fn zip_test() {
+    assert_eq!(
+        (true, false),
+        block_on(zip(ready(true), ready(false)))
+    );
 }
 
 #[test]
-fn or_unchecked_test() {
-    // assert_eq!(
-    //     false,
-    //     block_on(
-    //         or_unchecked(
-    //             Box::new(async { pending().await; true }),
-    //             Box::new(ready(false))
-    //         )
-    //     )
-    // );
+fn zips_test() {
+    assert_eq!(
+        (1, (2, 3)),
+        block_on(
+            zips!(
+                ready(1),
+                ready(2),
+                ready(3)
+            )
+        )
+    );
 }
-
