@@ -83,6 +83,8 @@ pub async fn yield_once() {
     }).await
 }
 
+/// I don't think this is useful in its current state, see the
+/// commented out tests
 pub async fn or<A, B, T>(a: A, b: B) -> T
 where A: Future<Output=T> + Unpin,
       B: Future<Output=T> + Unpin {
@@ -100,6 +102,8 @@ where A: Future<Output=T> + Unpin,
     }).await
 }
 
+/// I don't think this is useful in its current state, see the
+/// commented out tests
 pub async fn or_unchecked<A, B, T>(a: A, b: B) -> T
 where A: Future<Output=T>, B: Future<Output=T> {
     poll_state((a, b), |(a, b), ctx| {
@@ -116,11 +120,3 @@ where A: Future<Output=T>, B: Future<Output=T> {
         }
     }).await
 }
-
-// #[cfg(test)]
-// mod tests {
-//     #[test]
-//     fn it_works() {
-//         assert_eq!(2 + 2, 4);
-//     }
-// }
