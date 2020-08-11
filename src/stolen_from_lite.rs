@@ -52,7 +52,7 @@ macro_rules! __internal_fold_with {
     };
 }
 
-/// Like `or()`, but accepts an arbitrary number of futures rather
+/// Like [`or()`], but accepts an arbitrary number of futures rather
 /// than just two. Returns the result of the first future to complete;
 /// if multiple futures complete at the same time, returns the first
 /// one to complete. All of the futures must have the same return

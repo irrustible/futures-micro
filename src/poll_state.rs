@@ -16,7 +16,7 @@ impl<F, S> fmt::Debug for PollState<F, S> {
     }
 }
 
-/// Like [`poll_fn`], but provides mutable access to a state.
+/// Like [`poll_fn`][`crate::poll_fn()`], but provides mutable access to a state.
 pub fn poll_state<F, S, T>(state: S, fun: F) -> PollState<F, S>
 where F: FnMut(&mut S, &mut Context) -> Poll<T> {
     PollState { state, fun }
