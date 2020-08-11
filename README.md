@@ -19,7 +19,6 @@ Features:
   * `async fn waker()` to get the current waker.
   * `async fn sleep()` to wait until you are woken.
   * `async fn next_poll()` - polls a future once, returning it for reuse if pending.
-  * `poll_ref()` - poll as a mut ref method instead of a pin associated fn.
 * Common stuff:
   * `pending()` - never completes.
   * `ready()` - completes on first poll.
