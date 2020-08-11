@@ -1,6 +1,6 @@
 use core::future::Future;
 use core::pin::Pin;
-use core::task::{Context, Poll, Waker};
+use core::task::{Poll, Waker};
 
 mod poll_fn;
 pub use poll_fn::{PollFn, poll_fn};
@@ -10,20 +10,6 @@ pub use poll_state::{PollState, poll_state};
 
 // licensed differently
 mod stolen_from_lite;
-
-// Non-async api
-
-/// Extends Future with some methods
-trait FuturesMicroExt : Future {
-    /// Poll a future without faffing with pinning
-    fn poll_ref(&mut self, ctx: &mut Context) -> Poll<<Self as Future>::Output>;
-}
-
-impl<F: Future + Unpin> FuturesMicroExt for F {
-    fn poll_ref(&mut self, ctx: &mut Context) -> Poll<<Self as Future>::Output> {
-        <F as Future>::poll(unsafe { Pin::new_unchecked(self) }, ctx)
-    }
-}
 
 // Async API
 
@@ -55,15 +41,16 @@ pub async fn sleep() {
 }    
 
 /// Polls a future once. If it does not succeed, return it to try again
-pub async fn next_poll<F: Future>(f: F) -> Result<F::Output, F> {
-    poll_state(Some(f), |f, ctx| {
-        let mut f = f.take().unwrap();
-        let pin = unsafe { Pin::new_unchecked(&mut f) };
-        match <F as Future>::poll(pin, ctx) {
-            Poll::Ready(val) => Poll::Ready(Ok(val)),
-            Poll::Pending => Poll::Ready(Err(f)),
-        }
-    }).await
+pub async fn next_poll<F: Future>(mut f: F) -> Result<F::Output, F> {
+    {
+        let mut pin = unsafe { Pin::new_unchecked(&mut f) };
+        poll_fn(|ctx| {
+            match pin.as_mut().poll(ctx) {
+                Poll::Ready(val) => Poll::Ready(Ok(val)),
+                Poll::Pending => Poll::Ready(Err(())),
+            }
+        }).await
+    }.map_err(|_| f)
 }
 
 /// Pushes itself to the back of the executor queue so some other

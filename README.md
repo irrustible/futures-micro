@@ -1,8 +1,8 @@
 # futures-micro
 
-<!-- [![License](https://img.shields.io/crates/l/futures-micro.svg)](https://github.com/irrustible/futures-micro/blob/main/LICENSE) -->
-<!-- [![Package](https://img.shields.io/crates/v/futures-micro.svg)](https://crates.io/crates/futures-micro) -->
-<!-- [![Documentation](https://docs.rs/futures-micro/badge.svg)](https://docs.rs/futures-micro) -->
+[![License](https://img.shields.io/crates/l/futures-micro.svg)](https://github.com/irrustible/futures-micro/blob/main/LICENSE)
+[![Package](https://img.shields.io/crates/v/futures-micro.svg)](https://crates.io/crates/futures-micro)
+[![Documentation](https://docs.rs/futures-micro/badge.svg)](https://docs.rs/futures-micro)
 
 To futures-lite as futures-lite is to futures: smaller.
 
@@ -37,11 +37,20 @@ Brand new. The API might change as we discover we've messed up.
 The tests are currently being written, but hey it's all too obvious to
 fail, right? Right...?
 
-Note that this library does most things through async fns, so in
-stable rust you may have to box some of these things to be able to
-name the type (a need which is getting rarer over
-time). `futures-lite` returns named types if you don't want to box
-these.
+Note that this library does most things through async fns, so there
+are a couple of drawbacks:
+
+* They don't implement `Debug`, so things like `unwrap()` won't work
+  on results containing them.
+* You have to box them to name their type in stable rust.
+
+In addition, they have some strange quirks, like the inability for
+pending() to take any type you'd like it to. maybe you can think of a
+way to do this?
+
+`futures-lite` (which I contribute to) suffers none of these
+problems. Strongly consider using it if you don't need to avoid
+`alloc`. We use it in our test suite, especially `block_on`.
 
 ## Copyright and License
 

@@ -2,13 +2,14 @@
 name = "futures-micro"
 version = "0.1.0"
 description = "Zero dependency, no_std rewrite of a subset of futures-rs"
-keywords = ["futures"]
-categories = ["asynchronous", "concurrency"]
+keywords = ["async", "futures", "no-std"]
+categories = ["asynchronous", "concurrency", "no-std"]
 authors = ["James Laver <james.laver@gmail.com>"]
 homepage = "https://github.com/irrustible/futures-micro"
 repository = "https://github.com/irrustible/futures-micro"
 documentation = "https://docs.rs/futures-micro"
 edition = "2018"
+license = "MPL-2.0"
 readme = "README.md"
 
 [dev-dependencies]
