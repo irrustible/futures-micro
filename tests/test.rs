@@ -91,8 +91,6 @@ fn ors_test() {
     );
 }
 
-
-
 #[test]
 fn zip_test() {
     assert_eq!(
@@ -104,11 +102,22 @@ fn zip_test() {
 #[test]
 fn zips_test() {
     assert_eq!(
-        (1, (2, 3)),
+        (1, 2, 3),
         block_on(
             zips!(
                 ready(1),
                 ready(2),
+                ready(3)
+            )
+        )
+    );
+
+    assert_eq!(
+        (1, false, 3),
+        block_on(
+            zips!(
+                ready(1),
+                ready(false),
                 ready(3)
             )
         )
