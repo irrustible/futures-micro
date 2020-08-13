@@ -1,6 +1,6 @@
 [package]
 name = "futures-micro"
-version = "0.1.1"
+version = "0.2.0"
 description = "Zero dependency, no_std rewrite of a subset of futures-rs"
 keywords = ["async", "futures", "no-std"]
 categories = ["asynchronous", "concurrency", "no-std"]
