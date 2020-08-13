@@ -61,14 +61,3 @@ macro_rules! __internal_fold_with {
 macro_rules! ors {
     ($($es:expr),+$(,)?) => { $crate::__internal_fold_with!($crate::or, $($es),+) };
 }
-
-/// Like [`ors`], but combines with [`zip`] instead of [`or`], only
-/// returning when all are completed.
-///
-/// Note: this is going to return tuples nesting towards the right
-/// when n > 2. I don't like it, but my macro-fu is too weak to
-/// unravel it.
-#[macro_export]
-macro_rules! zips {
-    ($($es:expr),+$(,)?) => { $crate::__internal_fold_with!($crate::zip, $($es),+) };
-}

@@ -104,3 +104,33 @@ pub async fn zip<A, B>(a: impl Future<Output=A>, b: impl Future<Output=B>) -> (A
     }).await
 }
 
+#[macro_export]
+/// Like [`ors`], but combines with [`zip`] instead of [`or`], only
+/// returning when all are completed.
+macro_rules! zips {
+    ($($es:expr),+ $(,)?) => {
+        $crate::poll_state(
+            $crate::__internal_fold_with!($crate::zip, $($es),+),
+            |zips, ctx| {
+                use ::core::future::Future;
+                use ::core::pin::Pin;
+                use ::core::task::Poll;
+
+                let zips = unsafe { Pin::new_unchecked(zips) };
+                if let Poll::Ready(val) = zips.poll(ctx) {
+                    Poll::Ready($crate::zips!(@flatten; ; val; $($es),+))
+                } else {
+                    Poll::Pending
+                }
+            },
+        )
+    };
+
+    (@flatten; $($prev:expr,)*; $tuple:expr; $e:expr) => {
+        ($($prev,)* $tuple)
+    };
+
+    (@flatten; $($prev:expr,)*; $tuple:expr; $e:expr, $($es:expr),+) => {
+        $crate::zips!(@flatten; $($prev,)* $tuple.0,; $tuple.1; $($es),+)
+    };
+}
