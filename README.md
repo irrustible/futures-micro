@@ -8,66 +8,57 @@ To futures-lite as futures-lite is to futures: smaller.
 
 Features:
 * Fun tools to write everything as async fns.
-* Tiny, with no dependencies.
-* 100% `no_std` support, no heap allocation required.
+* Tiny, no dependencies.
+* 100% `no_std` support, no heap allocation required!
+* Complete stable compiler support - Uses no nightly features!
 
 * Bootstrap tools:
-  * `poll_fn` - wrap a function into a future
-  * `poll_state` - wrap a function and some state into a future
+  * `poll_fn` - wrap a function into a future.
+  * `poll_state` - wrap a function and some state into a future.
   * `pin!()` - pin a value to the stack.
 * Futures interface subversion (poll interface from async fns):
-  * `async fn waker()` to get the current waker.
-  * `async fn sleep()` to wait until you are woken.
-  * `async fn next_poll()` - polls a future once, returning it for reuse if pending.
+  * `waker()` to get the current waker.
+  * `sleep()` to wait until you are woken.
+  * `next_poll()` - polls a future once, returning it for reuse if pending.
 * Common stuff:
   * `pending()` - never completes.
   * `ready()` - completes on first poll.
   * `yield_once()` - lets some other futures do some work .
   * `or()` - return the result of the first future to complete.
-  * `zip()` - return the result of two futures when they both complete.
-  * `unwrap_ready!()` - unwraps a ready value or returns pending.
-  * `ors!()` - `or()`, but for any number of futures of the same type.
-  * `zips!()` - `zip()`, but for any number of futures.
+  * `or!()` - `or()`, but varargs.
+  * `zip()` - return the result of both futures when they both complete.
+  * `zip!()` - `zip()`, but varargs.
+  * `ready!()` - unwraps a ready value or returns pending.
 
 ## Status
 
-Brand new. The API might change as we discover we've messed up.
+Beta? The API we have here seems pretty reasonable now.
 
-The tests are currently being written, but hey it's all too obvious to
-fail, right? Right...?
+If there's something you're missing, you may be looking for
+[futures-lite](https://github.com/stjepang/futures-lite).
 
-Note that this library does most things through async fns, so there
-are a couple of drawbacks:
+## Soundness
 
-* They don't implement `Debug`, so things like `unwrap()` won't work
-  on results containing them.
-* You have to box them to name their type in stable rust.
+This crate uses `unsafe` for pin projection. We believe the code to be correct,
+but we'd welcome more eyes on it.
 
-In addition, they have some strange quirks, like the inability for
-pending() to take any type you'd like it to. maybe you can think of a
-way to do this?
-
-`futures-lite` (which I contribute to) suffers none of these
-problems. Strongly consider using it if you don't need to avoid
-`alloc`. We use it in our test suite, especially `block_on`.
+Yes, we could get rid of them with `pin-project-lite`, but it's just
+hiding the mess and then we couldn't claim `zero dependencies`.
 
 ## Copyright and License
 
-Almost everything:
+Copyright (c) 2020 James Laver, Matthieu le Brazidec, Stjepan Glavina,
+futures-micro contributors, futures-lite contributors
+Copyright (c) 2017 The Tokio Authors
+Copyright (c) 2016 Alex Crichton
 
-    Copyright (c) 2020 James Laver, futures-micro contributors.
-    
-    This Source Code Form is subject to the terms of the Mozilla Public
-    License, v. 2.0. If a copy of the MPL was not distributed with this
-    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+Licensed under either of
 
-Exclusion: module `stolen_from_lite`:
+ * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
-    Source: https://github.com/stjepang/futures-lite
+at your option.
 
-    Licensed under either of
-    
-        Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-        MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
-    
-    at your option.
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

@@ -1,7 +1,7 @@
 [package]
 name = "futures-micro"
-version = "0.2.0"
-description = "Zero dependency, no_std rewrite of a subset of futures-rs"
+version = "0.3.0"
+description = "Zero dependency, no_std compatible async prelude."
 keywords = ["async", "futures", "no-std"]
 categories = ["asynchronous", "concurrency", "no-std"]
 authors = ["James Laver <james.laver@gmail.com>"]
