@@ -12,7 +12,7 @@ pub use core::pin::Pin;
 pub use core::task::{Context, Poll, Waker};
 
 use core::fmt;
-use core::marker::PhantomData;
+use core::marker::{PhantomData, Unpin};
 
 // ---------- futures using the poll api -----------
 
@@ -364,7 +364,10 @@ pub fn sleep() -> impl Future<Output = ()> {
 /// assert_eq!(f.await, 1);
 /// # })
 /// ```
-pub async fn next_poll<F: Future>(mut f: F) -> Result<F::Output, F> {
+pub async fn next_poll<F>(mut f: F) -> Result<F::Output, F>
+where
+    F: Future + Unpin,
+{
     {
         let mut pin = unsafe { Pin::new_unchecked(&mut f) };
         poll_fn(|ctx| {
