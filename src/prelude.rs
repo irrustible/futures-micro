@@ -39,7 +39,6 @@ where
     Zip::new(f1, f2)
 }
 
-
 /// Returns the result of `left` or `right` future, preferring `left` if both are ready.
 ///
 /// # Examples
@@ -62,4 +61,3 @@ where
 {
     Or { future1, future2 }
 }
-

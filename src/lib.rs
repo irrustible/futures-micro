@@ -16,7 +16,6 @@ use core::marker::{PhantomData, Unpin};
 
 // ---------- futures using the poll api -----------
 
-
 /// Creates a future from a function returning [`Poll`].
 ///
 /// # Examples
@@ -35,7 +34,9 @@ use core::marker::{PhantomData, Unpin};
 /// # })
 /// ```
 pub fn poll_fn<F, T>(inner: F) -> PollFn<F>
-where F: FnMut(&mut Context<'_>) -> Poll<T> {
+where
+    F: FnMut(&mut Context<'_>) -> Poll<T>,
+{
     PollFn { inner }
 }
 
@@ -58,17 +59,18 @@ where F: FnMut(&mut Context<'_>) -> Poll<T> {
 /// # })
 /// ```
 pub fn poll_state<F, S, T>(state: S, fun: F) -> PollState<F, S>
-where F: FnMut(&mut S, &mut Context<'_>) -> Poll<T> {
+where
+    F: FnMut(&mut S, &mut Context<'_>) -> Poll<T>,
+{
     PollState { state, fun }
 }
-
 
 /// Future for the [`poll_fn()`] function.
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct PollFn<F> {
-    inner: F
+    inner: F,
 }
-    
+
 impl<F> fmt::Debug for PollFn<F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PollFn").finish()
@@ -76,9 +78,11 @@ impl<F> fmt::Debug for PollFn<F> {
 }
 
 impl<F, T> Future for PollFn<F>
-where F: FnMut(&mut Context<'_>) -> Poll<T> {
+where
+    F: FnMut(&mut Context<'_>) -> Poll<T>,
+{
     type Output = T;
-    fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_> ) -> Poll<T> {
+    fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<T> {
         let this = unsafe { self.get_unchecked_mut() };
         (this.inner)(ctx)
     }
@@ -90,7 +94,7 @@ pub struct PollState<F, S> {
     fun: F,
     state: S,
 }
-    
+
 impl<F, S> fmt::Debug for PollState<F, S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PollState").finish()
@@ -98,7 +102,9 @@ impl<F, S> fmt::Debug for PollState<F, S> {
 }
 
 impl<F, S, T> Future for PollState<F, S>
-where F: FnMut(&mut S, &mut Context<'_>) -> Poll<T> {
+where
+    F: FnMut(&mut S, &mut Context<'_>) -> Poll<T>,
+{
     type Output = T;
     fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<T> {
         let this = unsafe { Pin::get_unchecked_mut(self) };
@@ -150,12 +156,12 @@ where
         let this = unsafe { self.get_unchecked_mut() };
 
         if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future1) }.poll(cx) {
-            return Poll::Ready(t);
+            Poll::Ready(t)
+        } else if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future2) }.poll(cx) {
+            Poll::Ready(t)
+        } else {
+            Poll::Pending
         }
-        if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future2) }.poll(cx) {
-            return Poll::Ready(t);
-        }
-        Poll::Pending
     }
 }
 
@@ -194,7 +200,8 @@ where
     /// ```
     pub fn new(future1: F1, future2: F2) -> Self {
         Zip {
-            future1, future2,
+            future1,
+            future2,
             output1: None,
             output2: None,
         }
@@ -277,7 +284,6 @@ impl<T> Future for Pending<T> {
 pub struct Ready<T>(Option<T>);
 
 impl<T> Ready<T> {
-
     /// Creates a future that resolves to the provided value.
     ///
     /// # Examples
@@ -341,13 +347,14 @@ pub fn waker() -> impl Future<Output = Waker> {
 /// ```
 pub fn sleep() -> impl Future<Output = ()> {
     poll_state(false, |done, _| {
-        if *done { Poll::Ready(()) }
-        else {
+        if *done {
+            Poll::Ready(())
+        } else {
             *done = true;
             Poll::Pending
         }
     })
-}    
+}
 
 /// Polls a future once. If it does not succeed, return it to try again
 ///
@@ -370,21 +377,22 @@ where
 {
     {
         let mut pin = unsafe { Pin::new_unchecked(&mut f) };
-        poll_fn(|ctx| {
-            match pin.as_mut().poll(ctx) {
-                Poll::Ready(val) => Poll::Ready(Ok(val)),
-                Poll::Pending => Poll::Ready(Err(())),
-            }
-        }).await
-    }.map_err(|_| f)
+        poll_fn(|ctx| match pin.as_mut().poll(ctx) {
+            Poll::Ready(val) => Poll::Ready(Ok(val)),
+            Poll::Pending => Poll::Ready(Err(())),
+        })
+        .await
+    }
+    .map_err(|_| f)
 }
 
 /// Pushes itself to the back of the executor queue so some other
 /// tasks can do some work.
 pub fn yield_once() -> impl Future<Output = ()> {
     poll_state(false, |done, ctx| {
-        if *done { Poll::Ready(()) }
-        else {
+        if *done {
+            Poll::Ready(())
+        } else {
             *done = true;
             ctx.waker().wake_by_ref();
             Poll::Pending
