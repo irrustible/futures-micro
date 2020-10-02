@@ -320,8 +320,8 @@ impl<T> Future for Ready<T> {
 /// assert_eq!(async { waker.wake(); sleep().await; 1 }.await, 1)
 /// # })
 /// ```
-pub async fn waker() -> Waker {
-    poll_fn(|ctx| Poll::Ready(ctx.waker().clone())).await
+pub fn waker() -> impl Future<Output = Waker> {
+    poll_fn(|ctx| Poll::Ready(ctx.waker().clone()))
 }
 
 /// Goes to sleep until woken by its [`Waker`] being called.
@@ -339,14 +339,14 @@ pub async fn waker() -> Waker {
 /// assert_eq!(async { waker.wake(); sleep().await; 1 }.await, 1)
 /// # })
 /// ```
-pub async fn sleep() {
+pub fn sleep() -> impl Future<Output = ()> {
     poll_state(false, |done, _| {
         if *done { Poll::Ready(()) }
         else {
             *done = true;
             Poll::Pending
         }
-    }).await
+    })
 }    
 
 /// Polls a future once. If it does not succeed, return it to try again
@@ -378,7 +378,7 @@ pub async fn next_poll<F: Future>(mut f: F) -> Result<F::Output, F> {
 
 /// Pushes itself to the back of the executor queue so some other
 /// tasks can do some work.
-pub async fn yield_once() {
+pub fn yield_once() -> impl Future<Output = ()> {
     poll_state(false, |done, ctx| {
         if *done { Poll::Ready(()) }
         else {
@@ -386,7 +386,7 @@ pub async fn yield_once() {
             ctx.waker().wake_by_ref();
             Poll::Pending
         }
-    }).await
+    })
 }
 
 // --------- MACROS ---------
