@@ -33,6 +33,7 @@ use core::marker::{PhantomData, Unpin};
 /// assert_eq!(poll_fn(f).await, 7);
 /// # })
 /// ```
+#[inline(always)]
 pub fn poll_fn<F, T>(inner: F) -> PollFn<F>
 where
     F: FnMut(&mut Context<'_>) -> Poll<T>,
