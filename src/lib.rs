@@ -259,7 +259,7 @@ impl<T> Future for Pending<T> {
 }
 
 /// A future that resolves to the provided value.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct Ready<T>(Option<T>);
 

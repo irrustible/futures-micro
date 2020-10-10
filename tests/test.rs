@@ -15,25 +15,17 @@ fn ready_test() {
 
 #[test]
 fn waker_sleep_test() {
-    assert_eq!(
-        true,
-        block_on(async {
-            let waker = waker().await;
-            waker.wake();
-            sleep().await;
-            true
-        })
-    );
+    assert!(block_on(async {
+        let waker = waker().await;
+        waker.wake();
+        sleep().await;
+        true
+    }));
 }
 
 #[test]
 fn next_poll_test() {
-    // we can't use unwrap because these functions are not debug, le sigh.
-    if let Ok(ret) = block_on(next_poll(ready(1))) {
-        assert_eq!(ret, 1);
-    } else {
-        panic!()
-    }
+    assert_eq!(block_on(next_poll(ready(1))), Ok(1));
     assert!(block_on(next_poll(pending::<bool>())).is_err());
 }
 
