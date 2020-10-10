@@ -1,4 +1,5 @@
 #![feature(test)]
+#![allow(deprecated)]
 
 use futures_lite::future::{block_on, FutureExt};
 use futures_micro::prelude::*;
@@ -15,7 +16,7 @@ fn ready_test() {
 
 #[test]
 fn waker_sleep_test() {
-    assert_eq!(true, block_on(async {
+    assert!(block_on(async {
         let waker = waker().await;
         waker.wake();
         sleep().await;
@@ -25,10 +26,7 @@ fn waker_sleep_test() {
 
 #[test]
 fn next_poll_test() {
-    // we can't use unwrap because these functions are not debug, le sigh.
-    if let Ok(ret) = block_on(next_poll(ready(1))) {
-        assert_eq!(ret, 1);
-    } else { panic!() }
+    assert_eq!(block_on(next_poll(ready(1))), Ok(1));
     assert!(block_on(next_poll(pending::<bool>())).is_err());
 }
 
@@ -43,75 +41,31 @@ fn yield_once_test() {
     );
     assert_eq!(
         false,
-        block_on(
-            or!(async { yield_once().await; true }, ready(false))
-        )
+        block_on(or!(
+            async {
+                yield_once().await;
+                true
+            },
+            ready(false)
+        ))
     );
 }
 
 #[test]
 fn or_test() {
-    assert_eq!(
-        false,
-        block_on(or(pending::<bool>(), ready(false)))
-    );
-    assert_eq!(
-        1,
-        block_on(
-            or!(
-                ready(1),
-                ready(2),
-                ready(3)
-            )
-        )
-    );
-    assert_eq!(
-        2,
-        block_on(
-            or!(
-                pending(),
-                ready(2),
-                ready(3)
-            )
-        )
-    );
-    assert_eq!(
-        3,
-        block_on(
-            or!(
-                pending(),
-                pending(),
-                ready(3)
-            )
-        )
-    );
+    assert_eq!(false, block_on(or(pending::<bool>(), ready(false))));
+    assert_eq!(1, block_on(or!(ready(1), ready(2), ready(3))));
+    assert_eq!(2, block_on(or!(pending(), ready(2), ready(3))));
+    assert_eq!(3, block_on(or!(pending(), pending(), ready(3))));
 }
 
 #[test]
 fn zip_test() {
-    assert_eq!(
-        (true, false),
-        block_on(zip(ready(true), ready(false)))
-    );
-    assert_eq!(
-        (1, 2, 3),
-        block_on(
-            zip!(
-                ready(1),
-                ready(2),
-                ready(3)
-            )
-        )
-    );
+    assert_eq!((true, false), block_on(zip(ready(true), ready(false))));
+    assert_eq!((1, 2, 3), block_on(zip!(ready(1), ready(2), ready(3))));
 
     assert_eq!(
         (1, false, 3),
-        block_on(
-            zip!(
-                ready(1),
-                ready(false),
-                ready(3)
-            )
-        )
+        block_on(zip!(ready(1), ready(false), ready(3)))
     );
 }

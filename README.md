@@ -14,15 +14,35 @@ Features:
 
 * Bootstrap tools:
   * `poll_fn` - wrap a function into a future.
-  * `poll_state` - wrap a function and some state into a future.
+  * deprecated: `poll_state` - wrap a function and some state into a future.
+    ```rust
+    /// deprecated
+    poll_state(INITIAL, |state, ctx| {...}).await
+
+    /// replacement (NOTE: `*state` should be replaced by `state`)
+    let mut state = INITIAL;
+    poll_fn(move |ctx| { ... }).await
+    ```
   * `pin!()` - pin a value to the stack.
 * Futures interface subversion (poll interface from async fns):
   * `waker()` to get the current waker.
   * `sleep()` to wait until you are woken.
   * `next_poll()` - polls a future once, returning it for reuse if pending.
 * Common stuff:
-  * `pending()` - never completes.
-  * `ready()` - completes on first poll.
+  * deprecated: `pending()` - never completes.
+    ```rust
+    /// deprecated
+    pending()
+    /// replacement
+    poll_fn(|_| ::core::task::Poll::Pending)
+    ```
+  * deprecated: `ready()` - completes on first poll.
+    ```rust
+    /// deprecated
+    ready(x)
+    /// replacement
+    async { x }
+    ```
   * `yield_once()` - lets some other futures do some work .
   * `or()` - return the result of the first future to complete.
   * `or!()` - `or()`, but varargs.

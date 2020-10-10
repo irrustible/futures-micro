@@ -12,10 +12,9 @@ pub use core::pin::Pin;
 pub use core::task::{Context, Poll, Waker};
 
 use core::fmt;
-use core::marker::PhantomData;
+use core::marker::{PhantomData, Unpin};
 
 // ---------- futures using the poll api -----------
-
 
 /// Creates a future from a function returning [`Poll`].
 ///
@@ -34,8 +33,11 @@ use core::marker::PhantomData;
 /// assert_eq!(poll_fn(f).await, 7);
 /// # })
 /// ```
+#[inline(always)]
 pub fn poll_fn<F, T>(inner: F) -> PollFn<F>
-where F: FnMut(&mut Context<'_>) -> Poll<T> {
+where
+    F: FnMut(&mut Context<'_>) -> Poll<T>,
+{
     PollFn { inner }
 }
 
@@ -57,18 +59,24 @@ where F: FnMut(&mut Context<'_>) -> Poll<T> {
 /// assert_eq!(poll_state(7, f).await, 8);
 /// # })
 /// ```
-pub fn poll_state<F, S, T>(state: S, fun: F) -> PollState<F, S>
-where F: FnMut(&mut S, &mut Context<'_>) -> Poll<T> {
-    PollState { state, fun }
+#[inline]
+#[deprecated(since = "0.3.2", note = "can be replaced by poll_fn(move |ctx| ...)")]
+pub fn poll_state<F, S, T>(
+    mut state: S,
+    mut fun: F,
+) -> PollFn<impl FnMut(&mut Context<'_>) -> Poll<T>>
+where
+    F: FnMut(&mut S, &mut Context<'_>) -> Poll<T>,
+{
+    poll_fn(move |ctx| fun(&mut state, ctx))
 }
-
 
 /// Future for the [`poll_fn()`] function.
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct PollFn<F> {
-    inner: F
+    inner: F,
 }
-    
+
 impl<F> fmt::Debug for PollFn<F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PollFn").finish()
@@ -76,33 +84,13 @@ impl<F> fmt::Debug for PollFn<F> {
 }
 
 impl<F, T> Future for PollFn<F>
-where F: FnMut(&mut Context<'_>) -> Poll<T> {
-    type Output = T;
-    fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_> ) -> Poll<T> {
-        let this = unsafe { self.get_unchecked_mut() };
-        (this.inner)(ctx)
-    }
-}
-
-/// Future for the [`poll_state()`] function.
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct PollState<F, S> {
-    fun: F,
-    state: S,
-}
-    
-impl<F, S> fmt::Debug for PollState<F, S> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PollState").finish()
-    }
-}
-
-impl<F, S, T> Future for PollState<F, S>
-where F: FnMut(&mut S, &mut Context<'_>) -> Poll<T> {
+where
+    F: FnMut(&mut Context<'_>) -> Poll<T>,
+{
     type Output = T;
     fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<T> {
-        let this = unsafe { Pin::get_unchecked_mut(self) };
-        (this.fun)(&mut this.state, ctx)
+        let this = unsafe { self.get_unchecked_mut() };
+        (this.inner)(ctx)
     }
 }
 
@@ -150,12 +138,12 @@ where
         let this = unsafe { self.get_unchecked_mut() };
 
         if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future1) }.poll(cx) {
-            return Poll::Ready(t);
+            Poll::Ready(t)
+        } else if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future2) }.poll(cx) {
+            Poll::Ready(t)
+        } else {
+            Poll::Pending
         }
-        if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future2) }.poll(cx) {
-            return Poll::Ready(t);
-        }
-        Poll::Pending
     }
 }
 
@@ -194,7 +182,8 @@ where
     /// ```
     pub fn new(future1: F1, future2: F2) -> Self {
         Zip {
-            future1, future2,
+            future1,
+            future2,
             output1: None,
             output2: None,
         }
@@ -243,6 +232,11 @@ where
 /// unreachable!();
 /// # })
 /// ```
+#[allow(deprecated)]
+#[deprecated(
+    since = "0.3.2",
+    note = "can be trivially replaced by poll_fn(|_| Poll::Pending)"
+)]
 pub fn pending<T>() -> Pending<T> {
     Pending {
         _marker: PhantomData,
@@ -251,18 +245,25 @@ pub fn pending<T>() -> Pending<T> {
 
 /// Future for the [`pending()`] function.
 #[must_use = "futures do nothing unless you `.await` or poll them"]
+#[deprecated(
+    since = "0.3.2",
+    note = "can be trivially replaced by poll_fn(|_| Poll::Pending)"
+)]
 pub struct Pending<T> {
     _marker: PhantomData<T>,
 }
 
+#[allow(deprecated)]
 impl<T> Unpin for Pending<T> {}
 
+#[allow(deprecated)]
 impl<T> fmt::Debug for Pending<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pending").finish()
     }
 }
 
+#[allow(deprecated)]
 impl<T> Future for Pending<T> {
     type Output = T;
 
@@ -272,12 +273,13 @@ impl<T> Future for Pending<T> {
 }
 
 /// A future that resolves to the provided value.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
+#[deprecated(since = "0.3.2", note = "can be trivially replaced by an async block")]
 pub struct Ready<T>(Option<T>);
 
+#[allow(deprecated)]
 impl<T> Ready<T> {
-
     /// Creates a future that resolves to the provided value.
     ///
     /// # Examples
@@ -294,8 +296,10 @@ impl<T> Ready<T> {
     }
 }
 
+#[allow(deprecated)]
 impl<T> Unpin for Ready<T> {}
 
+#[allow(deprecated)]
 impl<T> Future for Ready<T> {
     type Output = T;
 
@@ -320,8 +324,8 @@ impl<T> Future for Ready<T> {
 /// assert_eq!(async { waker.wake(); sleep().await; 1 }.await, 1)
 /// # })
 /// ```
-pub async fn waker() -> Waker {
-    poll_fn(|ctx| Poll::Ready(ctx.waker().clone())).await
+pub fn waker() -> impl Future<Output = Waker> {
+    poll_fn(|ctx| Poll::Ready(ctx.waker().clone()))
 }
 
 /// Goes to sleep until woken by its [`Waker`] being called.
@@ -339,15 +343,17 @@ pub async fn waker() -> Waker {
 /// assert_eq!(async { waker.wake(); sleep().await; 1 }.await, 1)
 /// # })
 /// ```
-pub async fn sleep() {
-    poll_state(false, |done, _| {
-        if *done { Poll::Ready(()) }
-        else {
-            *done = true;
+pub fn sleep() -> impl Future<Output = ()> {
+    let mut done = false;
+    poll_fn(move |_| {
+        if done {
+            Poll::Ready(())
+        } else {
+            done = true;
             Poll::Pending
         }
-    }).await
-}    
+    })
+}
 
 /// Polls a future once. If it does not succeed, return it to try again
 ///
@@ -364,29 +370,39 @@ pub async fn sleep() {
 /// assert_eq!(f.await, 1);
 /// # })
 /// ```
-pub async fn next_poll<F: Future>(mut f: F) -> Result<F::Output, F> {
-    {
-        let mut pin = unsafe { Pin::new_unchecked(&mut f) };
-        poll_fn(|ctx| {
-            match pin.as_mut().poll(ctx) {
-                Poll::Ready(val) => Poll::Ready(Ok(val)),
-                Poll::Pending => Poll::Ready(Err(())),
-            }
-        }).await
-    }.map_err(|_| f)
+pub fn next_poll<F>(f: F) -> impl Future<Output = Result<F::Output, F>>
+where
+    F: Future + Unpin,
+{
+    let mut f = Some(f);
+    poll_fn(move |ctx| {
+        Poll::Ready(
+            match Pin::new(
+                f.as_mut()
+                    .expect("`next_poll` Future polled after completion"),
+            )
+            .poll(ctx)
+            {
+                Poll::Ready(val) => Ok(val),
+                Poll::Pending => Err(f.take().unwrap()),
+            },
+        )
+    })
 }
 
 /// Pushes itself to the back of the executor queue so some other
 /// tasks can do some work.
-pub async fn yield_once() {
-    poll_state(false, |done, ctx| {
-        if *done { Poll::Ready(()) }
-        else {
-            *done = true;
+pub fn yield_once() -> impl Future<Output = ()> {
+    let mut done = false;
+    poll_fn(move |ctx| {
+        if done {
+            Poll::Ready(())
+        } else {
+            done = true;
             ctx.waker().wake_by_ref();
             Poll::Pending
         }
-    }).await
+    })
 }
 
 // --------- MACROS ---------
@@ -476,7 +492,7 @@ macro_rules! ready {
     ($e:expr $(,)?) => {
         match $e {
             core::task::Poll::Ready(t) => t,
-            core::task::Poll::Pending => return core::task::Poll::Pending,
+            t @ core::task::Poll::Pending => return t,
         }
     };
 }
@@ -497,23 +513,20 @@ macro_rules! ready {
 /// ```
 #[macro_export]
 macro_rules! zip {
-    ($($es:expr),+ $(,)?) => {
-        $crate::poll_state(
-            $crate::__internal_fold_with!($crate::Zip::new, $($es),+),
-            |zips, ctx| {
-                use ::core::future::Future;
-                use ::core::pin::Pin;
-                use ::core::task::Poll;
+    ($($es:expr),+ $(,)?) => {{
+        let mut zips = $crate::__internal_fold_with!($crate::Zip::new, $($es),+);
+        $crate::poll_fn(move |ctx| {
+            use ::core::pin::Pin;
+            use ::core::task::Poll;
 
-                let zips = unsafe { Pin::new_unchecked(zips) };
-                if let Poll::Ready(val) = zips.poll(ctx) {
-                    Poll::Ready($crate::zip!(@flatten; ; val; $($es),+))
-                } else {
-                    Poll::Pending
-                }
-            },
-        )
-    };
+            let zips = unsafe { Pin::new_unchecked(&mut zips) };
+            if let Poll::Ready(val) = ::core::future::Future::poll(zips, ctx) {
+                Poll::Ready($crate::zip!(@flatten; ; val; $($es),+))
+            } else {
+                Poll::Pending
+            }
+        })
+    }};
 
     (@flatten; $($prev:expr,)*; $tuple:expr; $e:expr) => {
         ($($prev,)* $tuple)

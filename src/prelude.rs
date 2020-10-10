@@ -13,6 +13,8 @@ pub use crate::*;
 /// assert_eq!(ready(7).await, 7);
 /// # })
 /// ```
+#[allow(deprecated)]
+#[deprecated(since = "0.3.2", note = "can be trivially replaced by an async block")]
 pub fn ready<T>(val: T) -> Ready<T> {
     Ready::new(val)
 }
@@ -39,7 +41,6 @@ where
     Zip::new(f1, f2)
 }
 
-
 /// Returns the result of `left` or `right` future, preferring `left` if both are ready.
 ///
 /// # Examples
@@ -62,4 +63,3 @@ where
 {
     Or { future1, future2 }
 }
-
