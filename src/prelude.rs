@@ -13,6 +13,8 @@ pub use crate::*;
 /// assert_eq!(ready(7).await, 7);
 /// # })
 /// ```
+#[allow(deprecated)]
+#[deprecated(since = "0.3.2", note = "can be trivially replaced by an async block")]
 pub fn ready<T>(val: T) -> Ready<T> {
     Ready::new(val)
 }

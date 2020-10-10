@@ -60,6 +60,7 @@ where
 /// # })
 /// ```
 #[inline]
+#[deprecated(since = "0.3.2", note = "can be replaced by poll_fn(move |ctx| ...)")]
 pub fn poll_state<F, S, T>(
     mut state: S,
     mut fun: F,
@@ -231,6 +232,11 @@ where
 /// unreachable!();
 /// # })
 /// ```
+#[allow(deprecated)]
+#[deprecated(
+    since = "0.3.2",
+    note = "can be trivially replaced by poll_fn(|_| Poll::Pending)"
+)]
 pub fn pending<T>() -> Pending<T> {
     Pending {
         _marker: PhantomData,
@@ -239,18 +245,25 @@ pub fn pending<T>() -> Pending<T> {
 
 /// Future for the [`pending()`] function.
 #[must_use = "futures do nothing unless you `.await` or poll them"]
+#[deprecated(
+    since = "0.3.2",
+    note = "can be trivially replaced by poll_fn(|_| Poll::Pending)"
+)]
 pub struct Pending<T> {
     _marker: PhantomData<T>,
 }
 
+#[allow(deprecated)]
 impl<T> Unpin for Pending<T> {}
 
+#[allow(deprecated)]
 impl<T> fmt::Debug for Pending<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pending").finish()
     }
 }
 
+#[allow(deprecated)]
 impl<T> Future for Pending<T> {
     type Output = T;
 
@@ -262,8 +275,10 @@ impl<T> Future for Pending<T> {
 /// A future that resolves to the provided value.
 #[derive(Debug, PartialEq)]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
+#[deprecated(since = "0.3.2", note = "can be trivially replaced by an async block")]
 pub struct Ready<T>(Option<T>);
 
+#[allow(deprecated)]
 impl<T> Ready<T> {
     /// Creates a future that resolves to the provided value.
     ///
@@ -281,8 +296,10 @@ impl<T> Ready<T> {
     }
 }
 
+#[allow(deprecated)]
 impl<T> Unpin for Ready<T> {}
 
+#[allow(deprecated)]
 impl<T> Future for Ready<T> {
     type Output = T;
 

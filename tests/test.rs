@@ -1,4 +1,5 @@
 #![feature(test)]
+#![allow(deprecated)]
 
 use futures_lite::future::{block_on, FutureExt};
 use futures_micro::prelude::*;
