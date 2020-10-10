@@ -326,11 +326,12 @@ pub fn waker() -> impl Future<Output = Waker> {
 /// # })
 /// ```
 pub fn sleep() -> impl Future<Output = ()> {
-    poll_state(false, |done, _| {
-        if *done {
+    let mut done = false;
+    poll_fn(move |_| {
+        if done {
             Poll::Ready(())
         } else {
-            *done = true;
+            done = true;
             Poll::Pending
         }
     })
@@ -369,11 +370,12 @@ where
 /// Pushes itself to the back of the executor queue so some other
 /// tasks can do some work.
 pub fn yield_once() -> impl Future<Output = ()> {
-    poll_state(false, |done, ctx| {
-        if *done {
+    let mut done = false;
+    poll_fn(move |ctx| {
+        if done {
             Poll::Ready(())
         } else {
-            *done = true;
+            done = true;
             ctx.waker().wake_by_ref();
             Poll::Pending
         }
@@ -488,23 +490,20 @@ macro_rules! ready {
 /// ```
 #[macro_export]
 macro_rules! zip {
-    ($($es:expr),+ $(,)?) => {
-        $crate::poll_state(
-            $crate::__internal_fold_with!($crate::Zip::new, $($es),+),
-            |zips, ctx| {
-                use ::core::future::Future;
-                use ::core::pin::Pin;
-                use ::core::task::Poll;
+    ($($es:expr),+ $(,)?) => {{
+        let mut zips = $crate::__internal_fold_with!($crate::Zip::new, $($es),+);
+        $crate::poll_fn(move |ctx| {
+            use ::core::pin::Pin;
+            use ::core::task::Poll;
 
-                let zips = unsafe { Pin::new_unchecked(zips) };
-                if let Poll::Ready(val) = zips.poll(ctx) {
-                    Poll::Ready($crate::zip!(@flatten; ; val; $($es),+))
-                } else {
-                    Poll::Pending
-                }
-            },
-        )
-    };
+            let zips = unsafe { Pin::new_unchecked(&mut zips) };
+            if let Poll::Ready(val) = ::core::future::Future::poll(zips, ctx) {
+                Poll::Ready($crate::zip!(@flatten; ; val; $($es),+))
+            } else {
+                Poll::Pending
+            }
+        })
+    }};
 
     (@flatten; $($prev:expr,)*; $tuple:expr; $e:expr) => {
         ($($prev,)* $tuple)
