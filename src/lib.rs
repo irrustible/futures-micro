@@ -352,19 +352,24 @@ pub fn sleep() -> impl Future<Output = ()> {
 /// assert_eq!(f.await, 1);
 /// # })
 /// ```
-pub async fn next_poll<F>(mut f: F) -> Result<F::Output, F>
+pub fn next_poll<F>(f: F) -> impl Future<Output = Result<F::Output, F>>
 where
     F: Future + Unpin,
 {
-    {
-        let mut pin = unsafe { Pin::new_unchecked(&mut f) };
-        poll_fn(|ctx| match pin.as_mut().poll(ctx) {
-            Poll::Ready(val) => Poll::Ready(Ok(val)),
-            Poll::Pending => Poll::Ready(Err(())),
-        })
-        .await
-    }
-    .map_err(|_| f)
+    let mut f = Some(f);
+    poll_fn(move |ctx| {
+        Poll::Ready(
+            match Pin::new(
+                f.as_mut()
+                    .expect("`next_poll` Future polled after completion"),
+            )
+            .poll(ctx)
+            {
+                Poll::Ready(val) => Ok(val),
+                Poll::Pending => Err(f.take().unwrap()),
+            },
+        )
+    })
 }
 
 /// Pushes itself to the back of the executor queue so some other
