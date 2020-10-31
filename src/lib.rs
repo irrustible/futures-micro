@@ -12,7 +12,7 @@ pub use core::pin::Pin;
 pub use core::task::{Context, Poll, Waker};
 
 use core::fmt;
-use core::marker::{PhantomData, Unpin};
+use core::marker::Unpin;
 
 // ---------- futures using the poll api -----------
 
@@ -39,36 +39,6 @@ where
     F: FnMut(&mut Context<'_>) -> Poll<T>,
 {
     PollFn { inner }
-}
-
-/// Creates a future from a function returning [`Poll`] that has
-/// access to a provided state value.
-///
-/// # Examples
-///
-/// ```
-/// use futures_lite::future::block_on;
-/// use futures_micro::poll_state;
-/// use std::task::{Context, Poll};
-///
-/// # block_on(async {
-/// fn f(state: &mut i32, _ctx: &mut Context<'_>) -> Poll<i32> {
-///     Poll::Ready(*state + 1)
-/// }
-///
-/// assert_eq!(poll_state(7, f).await, 8);
-/// # })
-/// ```
-#[inline]
-#[deprecated(since = "0.3.2", note = "can be replaced by poll_fn(move |ctx| ...)")]
-pub fn poll_state<F, S, T>(
-    mut state: S,
-    mut fun: F,
-) -> PollFn<impl FnMut(&mut Context<'_>) -> Poll<T>>
-where
-    F: FnMut(&mut S, &mut Context<'_>) -> Poll<T>,
-{
-    poll_fn(move |ctx| fun(&mut state, ctx))
 }
 
 /// Future for the [`poll_fn()`] function.
@@ -108,20 +78,6 @@ where
     F2: Future,
 {
     /// Returns the result of `left` or `right` future, preferring `left` if both are ready.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use futures_micro::prelude::{Or, pending, ready};
-    ///
-    /// # futures_lite::future::block_on(async {
-    /// assert_eq!(Or::new(ready(1), pending::<i32>()).await, 1);
-    /// assert_eq!(Or::new(pending::<i32>(), ready(2)).await, 2);
-    ///
-    /// // The first future wins.
-    /// assert_eq!(Or::new(ready(1), ready(2)).await, 1);
-    /// # })
-    /// ```
     pub fn new(future1: F1, future2: F2) -> Self {
         Or { future1, future2 }
     }
@@ -220,94 +176,6 @@ where
     }
 }
 
-/// Creates a future that is always pending.
-///
-/// # Examples
-///
-/// ```no_run
-/// use futures_micro::pending;
-///
-/// # futures_lite::future::block_on(async {
-/// pending::<()>().await;
-/// unreachable!();
-/// # })
-/// ```
-#[allow(deprecated)]
-#[deprecated(
-    since = "0.3.2",
-    note = "can be trivially replaced by poll_fn(|_| Poll::Pending)"
-)]
-pub fn pending<T>() -> Pending<T> {
-    Pending {
-        _marker: PhantomData,
-    }
-}
-
-/// Future for the [`pending()`] function.
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-#[deprecated(
-    since = "0.3.2",
-    note = "can be trivially replaced by poll_fn(|_| Poll::Pending)"
-)]
-pub struct Pending<T> {
-    _marker: PhantomData<T>,
-}
-
-#[allow(deprecated)]
-impl<T> Unpin for Pending<T> {}
-
-#[allow(deprecated)]
-impl<T> fmt::Debug for Pending<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Pending").finish()
-    }
-}
-
-#[allow(deprecated)]
-impl<T> Future for Pending<T> {
-    type Output = T;
-
-    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<T> {
-        Poll::Pending
-    }
-}
-
-/// A future that resolves to the provided value.
-#[derive(Debug, PartialEq)]
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-#[deprecated(since = "0.3.2", note = "can be trivially replaced by an async block")]
-pub struct Ready<T>(Option<T>);
-
-#[allow(deprecated)]
-impl<T> Ready<T> {
-    /// Creates a future that resolves to the provided value.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use futures_micro::Ready;
-    ///
-    /// # futures_lite::future::block_on(async {
-    /// assert_eq!(Ready::new(7).await, 7);
-    /// # })
-    /// ```
-    pub fn new(value: T) -> Self {
-        Ready(Some(value))
-    }
-}
-
-#[allow(deprecated)]
-impl<T> Unpin for Ready<T> {}
-
-#[allow(deprecated)]
-impl<T> Future for Ready<T> {
-    type Output = T;
-
-    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<T> {
-        Poll::Ready(self.0.take().expect("`Ready` polled after completion"))
-    }
-}
-
 /// Get the [`Waker`] inside an async fn where you aren't supposed to
 /// have it.
 ///
@@ -363,8 +231,9 @@ pub fn sleep() -> impl Future<Output = ()> {
 /// use futures_micro::*;
 ///
 /// # futures_lite::future::block_on(async {
-/// let f = poll_state(false, |done: &mut bool, ctx: &mut Context<'_>| {
-///   if *done { Poll::Ready(1) } else { *done = true; Poll::Pending }
+/// let mut done = false;
+/// let f = poll_fn(move |ctx: &mut Context<'_>| {
+///   if done { Poll::Ready(1) } else { done = true; Poll::Pending }
 /// });
 /// let f = next_poll(f).await.unwrap_err();
 /// assert_eq!(f.await, 1);
@@ -421,18 +290,6 @@ macro_rules! __internal_fold_with {
 ///
 /// All futures must have the same output type. Left biased when more
 /// than one Future is ready at the same time.
-/// # Examples
-///
-/// ```
-/// use futures_micro::prelude::*;
-///
-/// # futures_lite::future::block_on(async {
-/// assert_eq!(or!(ready(1), pending::<i32>()).await, 1);
-/// assert_eq!(or!(pending::<i32>(), ready(2)).await, 2);
-///
-/// // The first ready future wins.
-/// assert_eq!(or!(ready(1), ready(2), ready(3)).await, 1);
-/// # })
 #[macro_export]
 macro_rules! or {
     ($($es:expr),+$(,)?) => { $crate::__internal_fold_with!($crate::Or::new, $($es),+) };

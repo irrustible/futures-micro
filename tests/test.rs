@@ -1,17 +1,17 @@
 #![feature(test)]
 #![allow(deprecated)]
 
+use std::task::Poll;
 use futures_lite::future::{block_on, FutureExt};
-use futures_micro::prelude::*;
+use futures_micro::{poll_fn, prelude::*};
 
-#[test]
-fn pending_test() {
-    assert_eq!(false, block_on(pending::<bool>().or(ready(false))));
+fn ready<T>(x: T) -> impl Future<Output = T> {
+    let mut x = Some(x);
+    poll_fn(move |_| Poll::Ready(x.take().unwrap()))
 }
 
-#[test]
-fn ready_test() {
-    assert_eq!((), block_on(ready(())));
+fn pending<T>() -> impl Future<Output = T> {
+    poll_fn(|_| Poll::Pending)
 }
 
 #[test]
@@ -26,7 +26,10 @@ fn waker_sleep_test() {
 
 #[test]
 fn next_poll_test() {
-    assert_eq!(block_on(next_poll(ready(1))), Ok(1));
+    match block_on(next_poll(ready(1))) {
+        Ok(1) => {},
+        _ => panic!("next_poll(ready(1)) misbehaved"),
+    }
     assert!(block_on(next_poll(pending::<bool>())).is_err());
 }
 

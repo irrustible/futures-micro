@@ -14,9 +14,9 @@ Features:
 
 * Bootstrap tools:
   * `poll_fn` - wrap a function into a future.
-  * deprecated: `poll_state` - wrap a function and some state into a future.
+  * dropped: `poll_state` - wrap a function and some state into a future.
     ```rust
-    /// deprecated
+    /// outdated
     poll_state(INITIAL, |state, ctx| {...}).await
 
     /// replacement (NOTE: `*state` should be replaced by `state`)
@@ -29,16 +29,16 @@ Features:
   * `sleep()` to wait until you are woken.
   * `next_poll()` - polls a future once, returning it for reuse if pending.
 * Common stuff:
-  * deprecated: `pending()` - never completes.
+  * dropped: `pending()` - never completes.
     ```rust
-    /// deprecated
+    /// outdated
     pending()
     /// replacement
     poll_fn(|_| ::core::task::Poll::Pending)
     ```
-  * deprecated: `ready()` - completes on first poll.
+  * dropped: `ready()` - completes on first poll.
     ```rust
-    /// deprecated
+    /// outdated
     ready(x)
     /// replacement
     async { x }
