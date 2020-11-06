@@ -1,6 +1,6 @@
 [package]
 name = "futures-micro"
-version = "0.3.1"
+version = "0.4.0"
 description = "Zero dependency, no_std compatible async prelude."
 keywords = ["async", "futures", "no-std"]
 categories = ["asynchronous", "concurrency", "no-std"]
@@ -9,7 +9,7 @@ homepage = "https://github.com/irrustible/futures-micro"
 repository = "https://github.com/irrustible/futures-micro"
 documentation = "https://docs.rs/futures-micro"
 edition = "2018"
-license = "MPL-2.0"
+license = "Apache-2.0 WITH LLVM-exception"
 readme = "README.md"
 
 [dev-dependencies]

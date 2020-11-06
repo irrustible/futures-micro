@@ -14,9 +14,9 @@ Features:
 
 * Bootstrap tools:
   * `poll_fn` - wrap a function into a future.
-  * deprecated: `poll_state` - wrap a function and some state into a future.
+  * dropped: `poll_state` - wrap a function and some state into a future.
     ```rust
-    /// deprecated
+    /// outdated
     poll_state(INITIAL, |state, ctx| {...}).await
 
     /// replacement (NOTE: `*state` should be replaced by `state`)
@@ -29,16 +29,16 @@ Features:
   * `sleep()` to wait until you are woken.
   * `next_poll()` - polls a future once, returning it for reuse if pending.
 * Common stuff:
-  * deprecated: `pending()` - never completes.
+  * dropped: `pending()` - never completes.
     ```rust
-    /// deprecated
+    /// outdated
     pending()
     /// replacement
     poll_fn(|_| ::core::task::Poll::Pending)
     ```
-  * deprecated: `ready()` - completes on first poll.
+  * dropped: `ready()` - completes on first poll.
     ```rust
-    /// deprecated
+    /// outdated
     ready(x)
     /// replacement
     async { x }
@@ -67,18 +67,12 @@ hiding the mess and then we couldn't claim `zero dependencies`.
 
 ## Copyright and License
 
-Copyright (c) 2020 James Laver, Matthieu le Brazidec, Stjepan Glavina,
+Copyright (c) 2020 James Laver, Matthieu le Brazidec, Stjepan Glavina, Erik Zscheile,
 futures-micro contributors, futures-lite contributors
-Copyright (c) 2017 The Tokio Authors
-Copyright (c) 2016 Alex Crichton
 
-Licensed under either of
-
- * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
+[Licensed](LICENSE) under Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0),
+with LLVM Exceptions (https://spdx.org/licenses/LLVM-exception.html).
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
-dual licensed as above, without any additional terms or conditions.
+licensed as above, without any additional terms or conditions.
