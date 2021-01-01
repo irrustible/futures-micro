@@ -29,26 +29,19 @@ Features:
   * `sleep()` to wait until you are woken.
   * `next_poll()` - polls a future once, returning it for reuse if pending.
 * Common stuff:
-  * dropped: `pending()` - never completes.
-    ```rust
-    /// outdated
-    pending()
-    /// replacement
-    poll_fn(|_| ::core::task::Poll::Pending)
-    ```
-  * dropped: `ready()` - completes on first poll.
-    ```rust
-    /// outdated
-    ready(x)
-    /// replacement
-    async { x }
-    ```
   * `yield_once()` - lets some other futures do some work .
   * `or()` - return the result of the first future to complete.
   * `or!()` - `or()`, but varargs.
   * `zip()` - return the result of both futures when they both complete.
   * `zip!()` - `zip()`, but varargs.
   * `ready!()` - unwraps a ready value or returns pending.
+
+## Missing/Removed APIs
+
+There are many APIs you will *not* find in this crate. Some are absent to keep the crate small and quick to compile, others used to be here but have since been removed. These are:
+
+* `pending()` - never completes, now in libcore as `core::future::pending()`
+* `ready()` - completes on first poll, now in libcore as `core::future::ready()`
 
 ## Status
 
