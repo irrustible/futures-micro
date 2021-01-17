@@ -8,7 +8,7 @@ To futures-lite as futures-lite is to futures: smaller.
 
 Features:
 * Fun tools to write everything as async fns.
-* Tiny, no dependencies.
+* Tiny, with a single dependency.
 * 100% `no_std` support, no heap allocation required!
 * Complete stable compiler support - Uses no nightly features!
 
@@ -56,14 +56,6 @@ Beta? The API we have here seems pretty reasonable now.
 
 If there's something you're missing, you may be looking for
 [futures-lite](https://github.com/stjepang/futures-lite).
-
-## Soundness
-
-This crate uses `unsafe` for pin projection. We believe the code to be correct,
-but we'd welcome more eyes on it.
-
-Yes, we could get rid of them with `pin-project-lite`, but it's just
-hiding the mess and then we couldn't claim `zero dependencies`.
 
 ## Copyright and License
 

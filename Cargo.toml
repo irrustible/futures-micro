@@ -12,5 +12,8 @@ edition = "2018"
 license = "Apache-2.0 WITH LLVM-exception"
 readme = "README.md"
 
+[dependencies]
+pin-project-lite = "0.2.4"
+
 [dev-dependencies]
 futures-lite = "0.1"

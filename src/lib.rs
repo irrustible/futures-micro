@@ -14,6 +14,8 @@ pub use core::task::{Context, Poll, Waker};
 use core::fmt;
 use core::marker::Unpin;
 
+use pin_project_lite::pin_project;
+
 // ---------- futures using the poll api -----------
 
 /// Creates a future from a function returning [`Poll`].
@@ -41,10 +43,12 @@ where
     PollFn { inner }
 }
 
-/// Future for the [`poll_fn()`] function.
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct PollFn<F> {
-    inner: F,
+pin_project! {
+    /// Future for the [`poll_fn()`] function.
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
+    pub struct PollFn<F> {
+        inner: F,
+    }
 }
 
 impl<F> fmt::Debug for PollFn<F> {
@@ -59,17 +63,21 @@ where
 {
     type Output = T;
     fn poll(self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<T> {
-        let this = unsafe { self.get_unchecked_mut() };
+        let this = self.project();
         (this.inner)(ctx)
     }
 }
 
-/// Returns the result of `left` or `right` future, preferring `left` if both are ready.
-#[derive(Debug)]
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct Or<F1, F2> {
-    future1: F1,
-    future2: F2,
+pin_project! {
+    /// Returns the result of `left` or `right` future, preferring `left` if both are ready.
+    #[derive(Debug)]
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
+    pub struct Or<F1, F2> {
+        #[pin]
+        future1: F1,
+        #[pin]
+        future2: F2,
+    }
 }
 
 impl<F1, F2> Or<F1, F2>
@@ -91,11 +99,11 @@ where
     type Output = T;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = unsafe { self.get_unchecked_mut() };
+        let this = self.project();
 
-        if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future1) }.poll(cx) {
+        if let Poll::Ready(t) = this.future1.poll(cx) {
             Poll::Ready(t)
-        } else if let Poll::Ready(t) = unsafe { Pin::new_unchecked(&mut this.future2) }.poll(cx) {
+        } else if let Poll::Ready(t) = this.future2.poll(cx) {
             Poll::Ready(t)
         } else {
             Poll::Pending
@@ -103,18 +111,22 @@ where
     }
 }
 
-/// Waits for two [`Future`]s to complete, returning both results.
-#[derive(Debug)]
-#[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct Zip<F1, F2>
-where
-    F1: Future,
-    F2: Future,
-{
-    future1: F1,
-    output1: Option<F1::Output>,
-    future2: F2,
-    output2: Option<F2::Output>,
+pin_project! {
+    /// Waits for two [`Future`]s to complete, returning both results.
+    #[derive(Debug)]
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
+    pub struct Zip<F1, F2>
+    where
+        F1: Future,
+        F2: Future,
+    {
+        #[pin]
+        future1: F1,
+        output1: Option<F1::Output>,
+        #[pin]
+        future2: F2,
+        output2: Option<F2::Output>,
+    }
 }
 
 impl<F1, F2> Zip<F1, F2>
@@ -154,17 +166,17 @@ where
     type Output = (F1::Output, F2::Output);
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut this = unsafe { self.get_unchecked_mut() };
+        let this = self.project();
 
         if this.output1.is_none() {
-            if let Poll::Ready(out) = unsafe { Pin::new_unchecked(&mut this.future1) }.poll(cx) {
-                this.output1 = Some(out);
+            if let Poll::Ready(out) = this.future1.poll(cx) {
+                *this.output1 = Some(out);
             }
         }
 
         if this.output2.is_none() {
-            if let Poll::Ready(out) = unsafe { Pin::new_unchecked(&mut this.future2) }.poll(cx) {
-                this.output2 = Some(out);
+            if let Poll::Ready(out) = this.future2.poll(cx) {
+                *this.output2 = Some(out);
             }
         }
 
