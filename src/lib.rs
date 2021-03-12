@@ -12,7 +12,6 @@ pub use core::pin::Pin;
 pub use core::task::{Context, Poll, Waker};
 
 use core::fmt;
-use core::marker::Unpin;
 
 use pin_project_lite::pin_project;
 
@@ -235,41 +234,6 @@ pub fn sleep() -> impl Future<Output = ()> {
     })
 }
 
-/// Polls a future once. If it does not succeed, return it to try again
-///
-/// # Examples
-///
-/// ```
-/// use futures_micro::*;
-///
-/// # futures_lite::future::block_on(async {
-/// let mut done = false;
-/// let f = poll_fn(move |ctx: &mut Context<'_>| {
-///   if done { Poll::Ready(1) } else { done = true; Poll::Pending }
-/// });
-/// let f = next_poll(f).await.unwrap_err();
-/// assert_eq!(f.await, 1);
-/// # })
-/// ```
-pub fn next_poll<F>(f: F) -> impl Future<Output = Result<F::Output, F>>
-where
-    F: Future + Unpin,
-{
-    let mut f = Some(f);
-    poll_fn(move |ctx| {
-        Poll::Ready(
-            match Pin::new(
-                f.as_mut()
-                    .expect("`next_poll` Future polled after completion"),
-            )
-            .poll(ctx)
-            {
-                Poll::Ready(val) => Ok(val),
-                Poll::Pending => Err(f.take().unwrap()),
-            },
-        )
-    })
-}
 
 /// Pushes itself to the back of the executor queue so some other
 /// tasks can do some work.
@@ -281,8 +245,7 @@ pub fn yield_once() -> impl Future<Output = ()> {
         } else {
             done = true;
             ctx.waker().wake_by_ref();
-            Poll::Pending
-        }
+            Poll::Pending        }
     })
 }
 

@@ -2,7 +2,7 @@
 #![allow(deprecated)]
 
 use std::task::Poll;
-use futures_lite::future::{block_on, FutureExt};
+use futures_lite::future::block_on;
 use futures_micro::{poll_fn, prelude::*};
 
 fn ready<T>(x: T) -> impl Future<Output = T> {
@@ -22,15 +22,6 @@ fn waker_sleep_test() {
         sleep().await;
         true
     }));
-}
-
-#[test]
-fn next_poll_test() {
-    match block_on(next_poll(ready(1))) {
-        Ok(1) => {},
-        _ => panic!("next_poll(ready(1)) misbehaved"),
-    }
-    assert!(block_on(next_poll(pending::<bool>())).is_err());
 }
 
 #[test]
