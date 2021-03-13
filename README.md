@@ -14,20 +14,10 @@ Features:
 
 * Bootstrap tools:
   * `poll_fn` - wrap a function into a future.
-  * dropped: `poll_state` - wrap a function and some state into a future.
-    ```rust
-    /// outdated
-    poll_state(INITIAL, |state, ctx| {...}).await
-
-    /// replacement (NOTE: `*state` should be replaced by `state`)
-    let mut state = INITIAL;
-    poll_fn(move |ctx| { ... }).await
-    ```
   * `pin!()` - pin a value to the stack.
 * Futures interface subversion (poll interface from async fns):
   * `waker()` to get the current waker.
   * `sleep()` to wait until you are woken.
-  * `next_poll()` - polls a future once, returning it for reuse if pending.
 * Common stuff:
   * `yield_once()` - lets some other futures do some work .
   * `or()` - return the result of the first future to complete.
@@ -42,13 +32,32 @@ There are many APIs you will *not* find in this crate. Some are absent to keep t
 
 * `pending()` - never completes, now in libcore as `core::future::pending()`
 * `ready()` - completes on first poll, now in libcore as `core::future::ready()`
+* `next_poll()` - polls a future once, returning it for reuse if pending.
+* `poll_state` - wrap a function and some state into a future.
+  ```rust
+  /// outdated
+  poll_state(INITIAL, |state, ctx| {...}).await
+
+  /// replacement (NOTE: `*state` should be replaced by `state`)
+  let mut state = INITIAL;
+  poll_fn(move |ctx| { ... }).await
+  ```
 
 ## Status
 
 Beta? The API we have here seems pretty reasonable now.
 
 If there's something you're missing, you may be looking for
-[futures-lite](https://github.com/stjepang/futures-lite).
+[futures-lite](https://github.com/smol-rs/futures-lite).
+
+## Changelog
+
+### 0.5.0 - 2021-03-13
+
+* Switch to using `pin-project-lite` for pin projections, removing
+  most of the unsafe code.
+* Removed `next_poll`. It wasn't very useful and our implementation
+  may not have been sound. This may explain why I can't find it in `futures-lite`.
 
 ## Copyright and License
 
