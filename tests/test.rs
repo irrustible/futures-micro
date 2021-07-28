@@ -1,9 +1,9 @@
 #![feature(test)]
 #![allow(deprecated)]
 
-use std::task::Poll;
 use futures_lite::future::block_on;
 use futures_micro::{poll_fn, prelude::*};
+use std::task::Poll;
 
 fn ready<T>(x: T) -> impl Future<Output = T> {
     let mut x = Some(x);

@@ -234,7 +234,6 @@ pub fn sleep() -> impl Future<Output = ()> {
     })
 }
 
-
 /// Pushes itself to the back of the executor queue so some other
 /// tasks can do some work.
 pub fn yield_once() -> impl Future<Output = ()> {
@@ -245,7 +244,8 @@ pub fn yield_once() -> impl Future<Output = ()> {
         } else {
             done = true;
             ctx.waker().wake_by_ref();
-            Poll::Pending        }
+            Poll::Pending
+        }
     })
 }
 

@@ -1,8 +1,8 @@
 [package]
 name = "futures-micro"
-version = "0.5.0"
+version = "1.0.0-rc0"
 description = "Minimal, no_std compatible async prelude."
-keywords = ["async", "futures", "no-std"]
+keywords = ["async", "futures", "no-std", "tests", "testing"]
 categories = ["asynchronous", "concurrency", "no-std"]
 authors = ["James Laver <james.laver@gmail.com>"]
 homepage = "https://github.com/irrustible/futures-micro"

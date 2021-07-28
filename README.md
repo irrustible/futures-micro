@@ -26,13 +26,19 @@ Features:
   * `zip!()` - `zip()`, but varargs.
   * `ready!()` - unwraps a ready value or returns pending.
 
+## Status
+
+Beta? The API we have here seems pretty reasonable now.
+
+If there's something you're missing, you may be looking for
+[futures-lite](https://github.com/smol-rs/futures-lite).
+
 ## Missing/Removed APIs
 
 There are many APIs you will *not* find in this crate. Some are absent to keep the crate small and quick to compile, others used to be here but have since been removed. These are:
 
 * `pending()` - never completes, now in libcore as `core::future::pending()`
 * `ready()` - completes on first poll, now in libcore as `core::future::ready()`
-* `next_poll()` - polls a future once, returning it for reuse if pending.
 * `poll_state` - wrap a function and some state into a future.
   ```rust
   /// outdated
@@ -42,13 +48,6 @@ There are many APIs you will *not* find in this crate. Some are absent to keep t
   let mut state = INITIAL;
   poll_fn(move |ctx| { ... }).await
   ```
-
-## Status
-
-Beta? The API we have here seems pretty reasonable now.
-
-If there's something you're missing, you may be looking for
-[futures-lite](https://github.com/smol-rs/futures-lite).
 
 ## Changelog
 
