@@ -60,7 +60,7 @@ There are many APIs you will *not* find in this crate. Some are absent to keep t
 
 ## Copyright and License
 
-Copyright (c) 2020 James Laver, Matthieu le Brazidec, Stjepan Glavina, Erik Zscheile,
+Copyright (c) 2020 James Laver, Matthieu le Brazidec, Stjepan Glavina, Alain Zscheile,
 futures-micro contributors, futures-lite contributors
 
 [Licensed](LICENSE) under Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0),
