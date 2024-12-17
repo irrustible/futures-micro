@@ -16,4 +16,4 @@ readme = "README.md"
 pin-project-lite = "0.2.4"
 
 [dev-dependencies]
-futures-lite = "0.1"
+futures-lite = "2.3.0"
